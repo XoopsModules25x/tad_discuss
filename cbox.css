@@ -1,9 +1,5 @@
-font{
-  font-size:12px;
-}
-
 span.f{
-  font-size:10px;
+  font-size: 80%;
   display:block-inline;
   color:white;border-radius: 3px;
   padding:1px 3px;
@@ -24,7 +20,6 @@ span.f{
   border-top-left-radius: 4px;
 }
 
-
 .triangle-border {
   position: relative;
   padding: 15px;
@@ -38,7 +33,6 @@ span.f{
   -moz-border-radius: 10px;
   border-radius: 10px;
 }
-
 
 /* Variant: for left positioned triangle------------------------------------------ */
 .triangle-border.left {
@@ -142,48 +136,40 @@ span.f{
   border-color: transparent #fff;
 }
 
-/************************** 表單表格樣式 **************************/
 div.cbox {
   background-color: #FFFFFF;
 }
 
-
-/* 留言簿「日期」樣式 */
 .cbox_date {
-  font-size: 10px;
+  font-size: 62.5%;
   text-align: right;
   font-family: Arial;
   margin: 8px 0px 2px;
   color:#a0a0a0;
 }
 
-/* 留言簿「IP」樣式 */
 .cbox_ip {
-  font-size: 10px;
+  font-size: 62.5%;
   color: rgb(204,102,0);
   font-family: Arial;
   margin-bottom: 2px;
 }
 
-/* 留言簿「發佈者」樣式 */
 .cbox_publisher {
   color: rgb(80,80,80);
   font-weight: normal;
   display: inline;
 }
 
-/* 留言簿「私密留言」樣式 */
 .lock_msg {
   color: red;
 }
 
-/* 留言簿「回覆留言」樣式 */
 div.remsg {
   color: rgb(102,153,0);
   display: inline;
 }
 
-/* 留言簿表格樣式 */
 table.cbox_tbl {
   width: 100%;
   padding: 0px;
@@ -191,27 +177,22 @@ table.cbox_tbl {
   background-color: #FFFFFF;
 }
 
-/* 有表單的儲存格樣式 */
 table.cbox_tbl td {
   padding: 1px;
-  font-size: 12px;
 }
 
-/* 有表單的「標題」儲存格樣式 */
 table.cbox_tbl td.title {
   background-color: transparent;
   color: rgb(0,0,0);
   text-align: right;
   vertical-align: middle;
 }
-/* 有表單的「輸入欄位」儲存格樣式 */
+
 table.cbox_tbl td.col {
   background-color: transparent;
 }
 
-/* 有表單的「工具列」儲存格樣式 */
 table.cbox_tbl input.name {
-  font-size: 12px;
   background-color: rgb(237,243,247);
   border: 1px solid rgb(217,223,227);
   color: rgb(80,80,80);
@@ -220,15 +201,14 @@ table.cbox_tbl input.name {
 textarea#DiscussContent {
   width: 100%;
   height: 60px;
-  font-size: 12px;
   background-color: rgb(237,243,247);
   border: 1px solid rgb(217,223,227);
   color: rgb(80,80,80);
   padding: 1px 3px 1px 3px;
 }
-/* 需登入才能留言的訊息框 */
+
 .need_login {
-  font-size: 11pt;
+  font-size: 92%;
   color: rgb(51,102,0);
   border: 1px dotted #dfdfdf;
   width: 90%;
@@ -292,8 +272,6 @@ td#smile {
   background-color: rgb(240,240,240);
 }
 
-
-
 .error_bg{
   background: rgb(255,255,255); /* Old browsers */
   background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(243,243,243,1) 50%, rgba(237,237,237,1) 51%, rgba(255,255,255,1) 100%); /* FF3.6+ */
@@ -303,6 +281,5 @@ td#smile {
   background: -ms-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(243,243,243,1) 50%,rgba(237,237,237,1) 51%,rgba(255,255,255,1) 100%); /* IE10+ */
   background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(243,243,243,1) 50%,rgba(237,237,237,1) 51%,rgba(255,255,255,1) 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
-
 
 }

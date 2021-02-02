@@ -1,22 +1,60 @@
 <?php
+use XoopsModules\Tadtools\FancyBox;
+use XoopsModules\Tadtools\TadUpFiles;
+use XoopsModules\Tadtools\Utility;
 /*-----------引入檔案區--------------*/
-include_once "header.php";
-include_once XOOPS_ROOT_PATH . "/modules/tadtools/TadUpFiles.php";
-$TadUpFiles = new TadUpFiles("tad_discuss");
+require_once __DIR__ . '/header.php';
 
-$op = isset($_REQUEST['op']) ? $_REQUEST['op'] : "";
+$TadUpFiles = new TadUpFiles('tad_discuss');
+
+/*-----------執行動作判斷區----------*/
+require_once $GLOBALS['xoops']->path('/modules/system/include/functions.php');
+$op = system_CleanVars($_REQUEST, 'op', '', 'string');
+$BoardID = system_CleanVars($_REQUEST, 'BoardID', 0, 'int');
+$DiscussID = system_CleanVars($_REQUEST, 'DiscussID', 0, 'int');
+$files_sn = system_CleanVars($_REQUEST, 'files_sn', '', 'int');
+
 switch ($op) {
+    //刪除資料
+    case 'delete_tad_discuss':
+        delete_tad_discuss($DiscussID);
+        header("location: {$_SERVER['PHP_SELF']}");
+        exit;
+
     //下載檔案
-    case "tufdl":
-        $files_sn = isset($_GET['files_sn']) ? intval($_GET['files_sn']) : "";
+    case 'tufdl':
         $TadUpFiles->add_file_counter($files_sn);
         exit;
+
+    default:
+        $main = list_tad_discuss_cbox($BoardID);
         break;
 }
+
+/*-----------秀出結果區--------------*/
+Utility::get_jquery();
+
+$FancyBox = new FancyBox('.fancybox_Discuss');
+$FancyBox->render();
+
+echo "
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+  <meta charset='" . _CHARSET . "'>
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <title>Post List</title>
+  <link rel='stylesheet' type='text/css' media='screen' href='" . XOOPS_URL . "/modules/tad_discuss/cbox.css'>
+</head>
+<body bgcolor='#FFFFFF' style='scrollbar-face-color:#EDF3F7;scrollbar-shadow-color:#EDF3F7;scrollbar-highlight-color:#EDF3F7;scrollbar-3dlight-color:#FFFFFF;scrollbar-darkshadow-color:#FFFFFF;scrollbar-track-color:#FFFFFF;scrollbar-arrow-color:#232323;scrollbar-base-color:#FFFFFF;'>
+  {$main}
+</body>
+</html>";
+
 /*-----------function區--------------*/
 
 //列出所有tad_discuss資料
-function list_tad_discuss_cbox($DefBoardID = "")
+function list_tad_discuss_cbox($DefBoardID = '')
 {
     global $xoopsDB, $xoopsModule, $xoopsModuleConfig, $xoopsUser, $TadUpFiles, $isAdmin;
 
@@ -24,31 +62,31 @@ function list_tad_discuss_cbox($DefBoardID = "")
     $limit = 20;
 
     //取得本模組編號
-    $module_id = $xoopsModule->getVar('mid');
+    $module_id = $xoopsModule->mid();
 
     //取得目前使用者的群組編號
     if ($xoopsUser) {
-        $now_uid = $xoopsUser->getVar('uid');
-        $groups  = $xoopsUser->getGroups();
+        $now_uid = $xoopsUser->uid();
+        $groups = $xoopsUser->getGroups();
     } else {
         $now_uid = 0;
-        $groups  = XOOPS_GROUP_ANONYMOUS;
+        $groups = XOOPS_GROUP_ANONYMOUS;
     }
-    $gperm_handler = xoops_gethandler('groupperm');
-    if (!$gperm_handler->checkRight('forum_read', $DefBoardID, $groups, $module_id)) {
+    $gpermHandler = xoops_getHandler('groupperm');
+    if (!$gpermHandler->checkRight('forum_read', $DefBoardID, $groups, $module_id)) {
         header('location:index.php');
     }
 
-    $jquery = get_jquery();
+    $jquery = Utility::get_jquery();
 
-    $andBoardID = (empty($DefBoardID)) ? "" : "and a.BoardID='$DefBoardID'";
-    $andLimit   = ($limit > 0) ? "limit 0,$limit" : "";
+    $andBoardID = (empty($DefBoardID)) ? '' : "and a.BoardID='$DefBoardID'";
+    $andLimit = ($limit > 0) ? "limit 0,$limit" : '';
 
-    $sql = "select a.*,b.* from " . $xoopsDB->prefix("tad_discuss") . " as a left join " . $xoopsDB->prefix("tad_discuss_board") . " as b on a.BoardID = b.BoardID where a.ReDiscussID='0' and b.BoardEnable='1' $andBoardID  order by a.LastTime desc limit 0,10";
+    $sql = 'select a.*,b.* from ' . $xoopsDB->prefix('tad_discuss') . ' as a left join ' . $xoopsDB->prefix('tad_discuss_board') . " as b on a.BoardID = b.BoardID where a.ReDiscussID='0' and b.BoardEnable='1' $andBoardID  order by a.LastTime desc limit 0,10";
 
-    $cbox_root_msg_color = empty($_GET['border_color']) ? "#B4C58D" : $_GET['border_color'];
-    $bg_color            = empty($_GET['bg_color']) ? "#FFFFFF" : $_GET['bg_color'];
-    $font_color          = empty($_GET['font_color']) ? "#000000" : $_GET['font_color'];
+    $cbox_root_msg_color = system_CleanVars($_REQUEST, 'cbox_root_msg_color', '#B4C58D', 'string');
+    $bg_color = system_CleanVars($_REQUEST, 'bg_color', '#FFFFFF', 'string');
+    $font_color = system_CleanVars($_REQUEST, 'font_color', '#000000', 'string');
 
     if ($isAdmin) {
         $del_js = "
@@ -58,7 +96,7 @@ function list_tad_discuss_cbox($DefBoardID = "")
           location.href=\"{$_SERVER['PHP_SELF']}?BoardID={$DefBoardID}&op=delete_tad_discuss&DiscussID=\" + DiscussID;
         }";
     } else {
-        $del_js = "";
+        $del_js = '';
     }
 
     $data = "
@@ -100,77 +138,76 @@ function list_tad_discuss_cbox($DefBoardID = "")
         $('iframe').css('width','100%');
       });
     </script>
+    <h3 style='display: none;'>All Posts</h3>
     ";
     $i = 2;
 
-    $result = $xoopsDB->query($sql) or web_error($sql);
-
-    $main_data = "";
+    $result = $xoopsDB->query($sql) or Utility::web_error($sql, __FILE__, __LINE__);
 
     $i = 1;
-    while ($all = $xoopsDB->fetchArray($result)) {
+    while (false !== ($all = $xoopsDB->fetchArray($result))) {
         //原cbox為 $sn,$publisher,$msg,$post_date,$ip,$only_root,$root_msg
         //以下會產生這些變數： $DiscussID , $ReDiscussID , $uid , $DiscussTitle , $DiscussContent , $DiscussDate , $BoardID , $LastTime , $Counter
         foreach ($all as $k => $v) {
             $$k = $v;
         }
 
-        $files = "";
-        $TadUpFiles->set_col("DiscussID", $DiscussID);
+        $files = '';
+        $TadUpFiles->set_col('DiscussID', $DiscussID);
         $allfiles = $TadUpFiles->get_file();
         foreach ($allfiles as $ff) {
-            $files .= ($ff['kind'] == "img") ? "<a href='{$ff['path']}' class='fancybox_Discuss thumb' rel='DiscussID_{$DiscussID}' target='_top'><img src='{$ff['tb_path']}' alt='{$ff['description']}'></a>" : "<a href='{$ff['path']}'><img src='images/file.png'></a>";
+            $files .= ('img' === $ff['kind']) ? "<a href='{$ff['path']}' class='fancybox_Discuss thumb' rel='group' target='_top'><img src='{$ff['tb_path']}' alt='{$ff['description']}'></a>" : "<a href='{$ff['path']}'><img src='images/file.png'></a>";
         }
         //以uid取得使用者名稱
-        $publisher = XoopsUser::getUnameFromId($uid, 1);
+        $publisher = \XoopsUser::getUnameFromId($uid, 1);
         if (empty($publisher)) {
-            $publisher = XoopsUser::getUnameFromId($uid, 0);
+            $publisher = \XoopsUser::getUnameFromId($uid, 0);
         }
 
         $MainDiscussTitle = $DiscussTitle;
 
-        $bgcss     = ($i % 2) ? "color:#000000;background-color:#FAFBFC" : "color:#000000;background-color:#EDF3F7";
-        $FBG_color = ($i % 2) ? "#0080C0" : "#C00080";
+        $bgcss = ($i % 2) ? 'color:#000000;background-color:#FAFBFC' : 'color:#000000;background-color:#EDF3F7';
+        $FBG_color = ($i % 2) ? '#0080C0' : '#C00080';
 
-        $post_date = substr(date("Y-m-d H:i:s", xoops_getUserTimestamp(strtotime($DiscussDate))), 0, 16);
+        $post_date = mb_substr(date('Y-m-d H:i:s', xoops_getUserTimestamp(strtotime($DiscussDate))), 0, 16);
         //$post_date=substr($date("Y-m-d H:i:s",xoops_getUserTimestamp(strtotime($DiscussDate))),0,16);
 
-        $show_tool = $gperm_handler->checkRight('forum_post', $BoardID, $groups, $module_id);
-        $tool      = "";
+        $show_tool = $gpermHandler->checkRight('forum_post', $BoardID, $groups, $module_id);
+        $tool = '';
         if ($show_tool and $isAdmin) {
             $tool = "<img src='" . XOOPS_URL . "/modules/tad_discuss/images/del2.gif' width=12 height=12 align=bottom hspace=2 onClick=\"delete_tad_discuss_func($DiscussID)\">";
         }
-        $re_button = isPublic($onlyTo, $uid, $DefBoardID) ? "<button type='button' style='font-size:11px;border:1px solid gray;float:right;' onClick=\"window.open('" . XOOPS_URL . "/modules/tad_discuss/post.php?DiscussID={$DiscussID}&ReDiscussID={$DiscussID}&BoardID={$BoardID}','discussCboxForm')\">" . _MD_TADDISCUS_DISCUSSRE . "</button>" : "";
+        $re_button = isPublic($onlyTo, $uid, $DefBoardID) ? "<button type='button' style='font-size: 80%;border:1px solid gray;float:right;' onClick=\"window.open('" . XOOPS_URL . "/modules/tad_discuss/post.php?DiscussID={$DiscussID}&ReDiscussID={$DiscussID}&BoardID={$BoardID}','discussCboxForm')\">" . _MD_TADDISCUS_DISCUSSRE . '</button>' : '';
 
-        $MainDiscussTitle = str_replace("[s", "<img src='" . XOOPS_URL . "/modules/tad_discuss/images/smiles/s", $MainDiscussTitle);
-        $MainDiscussTitle = str_replace(".gif]", ".gif' hspace=2 align='absmiddle'>", $MainDiscussTitle);
+        $MainDiscussTitle = str_replace('[s', "<img src='" . XOOPS_URL . '/modules/tad_discuss/images/smiles/s', $MainDiscussTitle);
+        $MainDiscussTitle = str_replace('.gif]', ".gif' hspace=2 align='absmiddle'>", $MainDiscussTitle);
 
-        $MainDiscussContent = str_replace("[s", "<img src='" . XOOPS_URL . "/modules/tad_discuss/images/smiles/s", $DiscussContent);
-        $MainDiscussContent = str_replace(".gif]", ".gif' hspace=2 align='absmiddle'>", $MainDiscussContent);
-        $MainDiscussID      = $DiscussID;
+        $MainDiscussContent = str_replace('[s', "<img src='" . XOOPS_URL . '/modules/tad_discuss/images/smiles/s', $DiscussContent);
+        $MainDiscussContent = str_replace('.gif]', ".gif' hspace=2 align='absmiddle'>", $MainDiscussContent);
+        $MainDiscussID = $DiscussID;
 
         if ($onlyTo) {
-            $titleColor   = "red";
-            $contentColor = "red";
+            $titleColor = 'red';
+            $contentColor = 'red';
         } else {
-            $titleColor   = "darkblue";
-            $contentColor = "black";
+            $titleColor = 'darkblue';
+            $contentColor = 'black';
         }
 
-        $isPublic   = isPublic($onlyTo, $uid, $DefBoardID);
+        $isPublic = isPublic($onlyTo, $uid, $DefBoardID);
         $onlyToName = getOnlyToName($onlyTo);
 
-        $MainDiscussTitle   = $isPublic ? $MainDiscussTitle : sprintf(_MD_TADDISCUS_ONLYTO, $onlyToName);
+        $MainDiscussTitle = $isPublic ? $MainDiscussTitle : sprintf(_MD_TADDISCUS_ONLYTO, $onlyToName);
         $MainDiscussContent = $isPublic ? $MainDiscussContent : sprintf(_MD_TADDISCUS_ONLYTO, $onlyToName);
-        $files              = isPublic($onlyTo, $uid, $DefBoardID) ? $files : "";
+        $files = isPublic($onlyTo, $uid, $DefBoardID) ? $files : '';
 
-        $dot = $isPublic ? "greenpoint" : "lock";
+        $dot = $isPublic ? 'greenpoint' : 'lock';
         //die("{$DiscussTitle}<br>{$DiscussContent}");
-        $showTitle = ($DiscussTitle == $DiscussContent) ? "" : "
+        $showTitle = ($DiscussTitle == $DiscussContent) ? '' : "
           {$re_button}
           <a href='discuss.php?DiscussID={$DiscussID}' style='text-decoration:none;color:{$titleColor};border-bottom:1px dotted gray;' target='_top'>{$MainDiscussTitle}</a>
         ";
-        $re_button2 = ($DiscussTitle == $DiscussContent) ? $re_button : "";
+        $re_button2 = ($DiscussTitle == $DiscussContent) ? $re_button : '';
 
         $mainDiscuss = "
         <div class='txt_msg' style='word-wrap:break-word;word-break:break-all;-moz-binding: url(wordwrap.xml#wordwrap);overflow: hidden;line-height:150%;padding:8px 1px;'>
@@ -188,48 +225,48 @@ function list_tad_discuss_cbox($DefBoardID = "")
         <div style='clear:both;'></div>
         ";
 
-        $sql     = "select * from " . $xoopsDB->prefix("tad_discuss") . " where ReDiscussID='$DiscussID' order by ReDiscussID , DiscussDate";
-        $result2 = $xoopsDB->query($sql) or web_error($sql);
-        $re      = "";
-        $f       = 2;
-        while ($all = $xoopsDB->fetchArray($result2)) {
+        $sql = 'select * from ' . $xoopsDB->prefix('tad_discuss') . " where ReDiscussID='$DiscussID' order by ReDiscussID , DiscussDate";
+        $result2 = $xoopsDB->query($sql) or Utility::web_error($sql, __FILE__, __LINE__);
+        $re = '';
+        $f = 2;
+        while (false !== ($all = $xoopsDB->fetchArray($result2))) {
             //以下會產生這些變數： $DiscussID , $ReDiscussID , $uid , $DiscussTitle , $DiscussContent , $DiscussDate , $BoardID , $LastTime , $Counter
             foreach ($all as $k => $v) {
                 $$k = $v;
             }
 
-            $files = "";
-            $TadUpFiles->set_col("DiscussID", $DiscussID);
+            $files = '';
+            $TadUpFiles->set_col('DiscussID', $DiscussID);
             $allfiles = $TadUpFiles->get_file();
             foreach ($allfiles as $ff) {
-                $files .= ($ff['kind'] == "img") ? "<a href='{$ff['path']}' class='fancybox_Discuss thumb' rel='DiscussID_{$DiscussID}' target='_parent'><img src='{$ff['tb_path']}'></a>" : "<a href='{$ff['path']}'><img src='images/file.png'></a>";
+                $files .= ('img' === $ff['kind']) ? "<a href='{$ff['path']}' class='fancybox_Discuss thumb' rel='DiscussID_{$DiscussID}' target='_parent'><img src='{$ff['tb_path']}' alt='{$ff['tb_path']}'></a>" : "<a href='{$ff['path']}'><img src='images/file.png' alt='pic'></a>";
             }
 
             //以uid取得使用者名稱
-            $publisher = XoopsUser::getUnameFromId($uid, 1);
+            $publisher = \XoopsUser::getUnameFromId($uid, 1);
             if (empty($publisher)) {
-                $publisher = XoopsUser::getUnameFromId($uid, 0);
+                $publisher = \XoopsUser::getUnameFromId($uid, 0);
             }
 
-            $post_date = substr(date("Y-m-d H:i:s", xoops_getUserTimestamp(strtotime($DiscussDate))), 0, 16);
+            $post_date = mb_substr(date('Y-m-d H:i:s', xoops_getUserTimestamp(strtotime($DiscussDate))), 0, 16);
 
-            $tool = "";
+            $tool = '';
             if ($show_tool and $isAdmin) {
                 $tool = "<img src='" . XOOPS_URL . "/modules/tad_discuss/images/del2.gif' width=12 height=12 align=bottom hspace=2 onClick=\"delete_tad_discuss_func($DiscussID)\">";
             }
 
-            $DiscussContent = str_replace("[s", "<img src='" . XOOPS_URL . "/modules/tad_discuss/images/smiles/s", $DiscussContent);
-            $DiscussContent = str_replace(".gif]", ".gif' hspace=2 align='absmiddle'>", $DiscussContent);
+            $DiscussContent = str_replace('[s', "<img src='" . XOOPS_URL . '/modules/tad_discuss/images/smiles/s', $DiscussContent);
+            $DiscussContent = str_replace('.gif]', ".gif' hspace=2 align='absmiddle'>", $DiscussContent);
 
             if ($onlyTo) {
-                $ContentColor = "red";
+                $ContentColor = 'red';
             } else {
                 $ContentColor = $font_color;
             }
 
-            $onlyToName     = getOnlyToName($onlyTo);
+            $onlyToName = getOnlyToName($onlyTo);
             $DiscussContent = isPublic($onlyTo, $uid, $DefBoardID) ? $DiscussContent : sprintf(_MD_TADDISCUS_ONLYTO, $onlyToName);
-            $files          = isPublic($onlyTo, $uid, $DefBoardID) ? $files : "";
+            $files = isPublic($onlyTo, $uid, $DefBoardID) ? $files : '';
 
             $re .= "
             $re_button
@@ -250,7 +287,7 @@ function list_tad_discuss_cbox($DefBoardID = "")
         }
 
         $data .= "
-        <div style='width:100%;font-size:12px;line-height:150%;{$bgcss}'>
+        <div style='width:100%;font-size: 75%;line-height:150%;{$bgcss}'>
           {$mainDiscuss}
           {$re}
         </div>";
@@ -259,54 +296,3 @@ function list_tad_discuss_cbox($DefBoardID = "")
 
     return $data;
 }
-
-/*-----------執行動作判斷區----------*/
-include_once $GLOBALS['xoops']->path('/modules/system/include/functions.php');
-$op        = system_CleanVars($_REQUEST, 'op', '', 'string');
-$BoardID   = system_CleanVars($_REQUEST, 'BoardID', 0, 'int');
-$DiscussID = system_CleanVars($_REQUEST, 'DiscussID', 0, 'int');
-
-switch ($op) {
-    //刪除資料
-    case "delete_tad_discuss";
-        delete_tad_discuss($DiscussID);
-        header("location: {$_SERVER['PHP_SELF']}");
-        break;
-
-    default:
-        $main = list_tad_discuss_cbox($BoardID);
-        break;
-}
-
-/*-----------秀出結果區--------------*/
-$jquery = get_jquery();
-echo "
-<html>
-  <head>
-  <meta http-equiv='content-type' content='text/html; charset=" . _CHARSET . "'>
-  $jquery
-
-  <script type='text/javascript' src='" . XOOPS_URL . "/modules/tadtools/fancyBox/lib/jquery.mousewheel-3.0.6.pack.js'></script>
-  <script type='text/javascript' language='javascript' src='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/jquery.fancybox.js?v=2.1.4'></script>
-  <link rel='stylesheet' href='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/jquery.fancybox.css?v=2.1.4' type='text/css' media='screen' />
-  <link rel='stylesheet' type='text/css' href='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/helpers/jquery.fancybox-buttons.css?v=1.0.5' />
-  <script type='text/javascript' src='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/helpers/jquery.fancybox-buttons.js?v=1.0.5'></script>
-  <link rel='stylesheet' type='text/css' href='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/helpers/jquery.fancybox-thumbs.css?v=1.0.7' />
-  <script type='text/javascript' src='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/helpers/jquery.fancybox-thumbs.js?v=1.0.7'></script>
-  <script type='text/javascript' src='" . XOOPS_URL . "/modules/tadtools/fancyBox/source/helpers/jquery.fancybox-media.js?v=1.0.5'></script>
-    <script type='text/javascript'>
-    $(document).ready(function() {
-      $('.fancybox_Discuss').fancybox({
-        openEffect  : 'none',
-        closeEffect : 'none',
-        autoPlay  : true
-      });
-
-    });
-  </script>
-  <link rel='stylesheet' type='text/css' media='screen' href='" . XOOPS_URL . "/modules/tad_discuss/cbox.css' />
-</head>
-<body bgcolor='#FFFFFF' style='scrollbar-face-color:#EDF3F7;scrollbar-shadow-color:#EDF3F7;scrollbar-highlight-color:#EDF3F7;scrollbar-3dlight-color:#FFFFFF;scrollbar-darkshadow-color:#FFFFFF;scrollbar-track-color:#FFFFFF;scrollbar-arrow-color:#232323;scrollbar-base-color:#FFFFFF;'>
-  {$main}
-</body>
-</html>";
